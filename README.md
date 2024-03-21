@@ -4,7 +4,7 @@ O objetivo principal deste case é identificar os principais fatores que contrib
 
 ### Tecnologias utilizadas
 * [BigQuery](https://www.googleadservices.com/pagead/aclk?sa=L&ai=DChcSEwiQkoS66YGFAxUqXkgAHZyyC8QYABAAGgJjZQ&gclid=CjwKCAjw7-SvBhB6EiwAwYdCAU-yl5hc3WyK1gb5OJRQl9_eJOrWxA83gTryphXXFx_VEWMWoEFqWRoCQ9QQAvD_BwE&ohost=www.google.com&cid=CAESVuD2TQwm3kU8xvOk3AzUr6VOhQCjdT4mLvrZ-qZI5lbufVtG-bIaVWBNcC5ccJcrlqQ6nrT0xedjJcmYv4xZXFKgEY8NHUdxSijbsvWvZtkbOQcZ_yzX&sig=AOD64_2DD-ziKq6QSQdS_VQGbU1C-Lft9A&q&adurl&ved=2ahUKEwjp9v656YGFAxXSqZUCHashB6MQ0Qx6BAgGEAE)
-* PowerBI ()
+* PowerBI (https://github.com/thais-matos/Case-Churn/blob/main/Case_Churn.pbix)
 * Planilhas Google
 
 ### Códigos utilizados (Query)  
