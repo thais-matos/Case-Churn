@@ -1,6 +1,7 @@
 # Case-Churn
-A equipe de assinaturas tem como objetivo reduzir a perda de assinantes, também conhecida como "Churn", na equipe de assinaturas. O conceito de "Churn" refere-se à perda de qualquer usuário que tenha assinado o serviço de assinatura e posteriormente o cancelou.
+A equipe de assinaturas tem como objetivo reduzir a perda de assinantes, também conhecida como "Churn", na equipe de assinaturas. O conceito de "Churn" refere-se à perda de qualquer usuário que tenha assinado o serviço de assinatura e posteriormente o cancelou.  
 O objetivo principal deste case é identificar os principais fatores que contribuem para o Churn dos assinantes e a fim de desenvolver estratégias eficazes para reduzir essa perda. Isso envolve a análise de dados relacionados aos assinantes, incluindo informações sobre a data de criação da assinatura, a data de cancelamento, o comportamento do usuário, a receita gerada e outros dados relevantes.  
+A análise de churn fornece uma base sólida para a tomada de decisões estratégicas. Ao invés de confiar apenas na intuição ou no palpite, as empresas podem tomar decisões fundamentadas em dados objetivos e insights derivados da análise de churn.
 
 ### Tecnologias utilizadas
 * [BigQuery](https://www.googleadservices.com/pagead/aclk?sa=L&ai=DChcSEwiQkoS66YGFAxUqXkgAHZyyC8QYABAAGgJjZQ&gclid=CjwKCAjw7-SvBhB6EiwAwYdCAU-yl5hc3WyK1gb5OJRQl9_eJOrWxA83gTryphXXFx_VEWMWoEFqWRoCQ9QQAvD_BwE&ohost=www.google.com&cid=CAESVuD2TQwm3kU8xvOk3AzUr6VOhQCjdT4mLvrZ-qZI5lbufVtG-bIaVWBNcC5ccJcrlqQ6nrT0xedjJcmYv4xZXFKgEY8NHUdxSijbsvWvZtkbOQcZ_yzX&sig=AOD64_2DD-ziKq6QSQdS_VQGbU1C-Lft9A&q&adurl&ved=2ahUKEwjp9v656YGFAxXSqZUCHashB6MQ0Qx6BAgGEAE)
@@ -112,4 +113,3 @@ FROM
 WHERE status in ('paused','canceled')
 group by 2,3
 ```
-
