@@ -4,35 +4,37 @@ O objetivo principal deste case é identificar os principais fatores que contrib
 
 ### Tecnologias utilizadas
 * [BigQuery](https://www.googleadservices.com/pagead/aclk?sa=L&ai=DChcSEwiQkoS66YGFAxUqXkgAHZyyC8QYABAAGgJjZQ&gclid=CjwKCAjw7-SvBhB6EiwAwYdCAU-yl5hc3WyK1gb5OJRQl9_eJOrWxA83gTryphXXFx_VEWMWoEFqWRoCQ9QQAvD_BwE&ohost=www.google.com&cid=CAESVuD2TQwm3kU8xvOk3AzUr6VOhQCjdT4mLvrZ-qZI5lbufVtG-bIaVWBNcC5ccJcrlqQ6nrT0xedjJcmYv4xZXFKgEY8NHUdxSijbsvWvZtkbOQcZ_yzX&sig=AOD64_2DD-ziKq6QSQdS_VQGbU1C-Lft9A&q&adurl&ved=2ahUKEwjp9v656YGFAxXSqZUCHashB6MQ0Qx6BAgGEAE)
+* PowerBI ()
+* Planilhas Google
 
 ### Códigos utilizados (Query)  
-Essa query tem o objetivo de fornecer informações sobre canais aquisição de clientes, datas de assinatura e cancelamento, receita correlacionados a geolocalização do cliente, permitindo uma análise abrangente dessas variáveis:
+Essa consulta tem o objetivo de fornecer informações sobre a taxa de cancelamentos e pausas nas assinaturas por canal de aquisição correlacionados a geolocalização do cliente, permitindo uma análise com o intuito de identificar quais canais de aquisição têm melhor desempenho em reter clientes e analisar as taxas de churn por estado, a fim de identificar possíveis ações regionais que estejam funcionando na retenção dos clientes:
 ```ruby
---Informações de Canal de Aquisição, Datas e Receita por Geolocalização
-WITH ChurnPorCanal AS (
+--Taxa de churn por Canal de Aquisição correlacionada a geolocalização (Estado) do cliente
   SELECT 
-    id,
     marketing_source,
     state,
-    COUNT(DISTINCT id) AS total_assinaturas,
-    COUNTIF(deleted_at IS NOT NULL) AS assinaturas_canceladas,
-    (COUNTIF(deleted_at IS NOT NULL) / COUNT(DISTINCT id)) * 100 AS taxa_churn,
-    status
+    COUNT(DISTINCT id) AS Total_assinaturas,
+    COUNTIF(deleted_at IS NOT NULL) AS Assinaturas_canceladas,
+    COUNTIF(status = 'paused') AS Assinaturas_pausadas,
+    (COUNTIF(deleted_at IS NOT NULL) / COUNT(DISTINCT id)) * 100 AS Taxa_churn
   FROM 
     `case-417720.Churn.Case`
   GROUP BY
-    id, 
     state,
-    marketing_source,
-    status
-),
+    marketing_source
+```
+Nessa consulta foi realizadas as conversões das colunas deleted_at (cancelamento) e created_at (assinatura) para o tipo Date e calculada a diferença em dias entre as datas de cancelamento e assinatura para cada cliente, usada para calcular o tempo médio que os clientes permaneceram ativos antes de cancelar a assinatura. Com intuito de ajudar a empresa a entender a longevidade típica do cliente.
+Também foi calculada a soma da receita total, soma do ticket médio e soma do total de pedidos de cada cliente, tornando possível analisar a receita gerada pelos clientes ao longo do tempo antes do churn ou da pausa na assinatura, assim como o tempo desde a última compra do cliente (recency). Auxiliando a empresa a entender o valor desses clientes e identificar clientes que não realizam compras há muito tempo mostrando um maior risco de churn e oportunidades para aumentar a retenção:
 
-Datas AS (
+```ruby
+WITH Datas AS (
   SELECT
     id,
     DATE(PARSE_TIMESTAMP('%m/%d/%y %I:%M %p', deleted_at)) AS Data_cancelamento,
     DATE(PARSE_TIMESTAMP('%m/%d/%y %I:%M %p', created_at)) AS Data_assinatura,
-    recency
+    recency,
+    status
   FROM
     `case-417720.Churn.Case`
 ),
@@ -44,52 +46,44 @@ DiferencaDatas AS (
     Data_cancelamento,
     DATE_DIFF(Data_cancelamento, Data_assinatura, DAY) AS Dias_entre_assinatura_e_cancelamento,
     recency,
+    status
   FROM Datas
 ),
 
 ReceitaPorGeolocalizacao AS (
   SELECT
+    id,
     state,
     city,
     SUM(all_revenue) AS Receita_total,
     SUM(all_orders) AS Total_pedidos,
-    SUM(average_ticket) as Ticket_medio,
+    SUM(average_ticket) as Ticket_medio
   FROM
     `case-417720.Churn.Case`
   GROUP BY
+    id,
     state,
     city
 )
 
 SELECT
-  CPC.state,
-  RPG.* except(state),
-  CPC.marketing_source,
-  CPC.status,
-  CPC.assinaturas_canceladas,
-  CPC.total_assinaturas,
-  CPC.taxa_churn,
-  DD.Dias_entre_assinatura_e_cancelamento
+  RPG.id,
+  RPG.state,
+  RPG.city,
+  RPG.Receita_total,
+  RPG.Total_pedidos,
+  RPG.Ticket_medio,
+  DD.Dias_entre_assinatura_e_cancelamento,
+  DD.recency,
+  DD.status
 FROM 
-  ChurnPorCanal AS CPC
+  DiferencaDatas AS DD
 JOIN 
-  DiferencaDatas AS DD ON CPC.id = DD.id
-JOIN 
-  ReceitaPorGeolocalizacao AS RPG ON CPC.state = RPG.state
-group by 1,2,3,4,5,6,7,8,9,10,11
-```
-Essa consulta permite visualizar a contagem total de assinaturas, a contagem de assinaturas canceladas e a taxa de churn em percentual:
-```ruby
--- Taxa de churn geral das assinaturas
-SELECT 
-  COUNT(DISTINCT id) AS total_assinaturas,
-  COUNTIF(deleted_at IS NOT NULL) AS assinaturas_canceladas,
-  (COUNTIF(deleted_at IS NOT NULL) / COUNT(DISTINCT id)) * 100 AS taxa_churn
-FROM 
-  `case-417720.Churn.Case`
+  ReceitaPorGeolocalizacao AS RPG ON DD.id = RPG.id
+WHERE DD.status in ('paused', 'canceled')
 ```
 
-Essa consulta retorna a contagem de clientes para diferentes versões (ou estados) das assinaturas, onde o status é 'paused' ou 'canceled':
+Essa consulta retorna a contagem de clientes como status 'paused' ou 'canceled', agrupados de acordo com a versão da assinatura e por Estado, fornecendo informações que podem ajudar a identificar padrões específicos de churn ou possível churn de acordo com a versão da assinatura do cliente:
 ```ruby
 -- Quantidade de clientes por versão (status paused e canceled)
 SELECT
@@ -103,30 +97,3 @@ WHERE status in ('paused','canceled')
 group by 2,3
 ```
 
-Nessa consulta é feita uma conversão das colunas deleted_at (cancelamento) e created_at (assinatura) para o tipo de dado Date. Além disso, são agregadas outras métricas como receita total, total de pedidos, recência e ticket médio. Também calcula a diferença em dias entre as datas de cancelamento e assinatura para cada cliente:
-```ruby
--- Conversão em Date das colunas assinatura e cancelamento
-with Datas as
-(
-  SELECT
-  id,
-  date(PARSE_TIMESTAMP('%m/%d/%y %I:%M %p', deleted_at)) AS Data_cancelamento,
-  date(PARSE_TIMESTAMP('%m/%d/%y %I:%M %p', created_at)) AS Data_assinatura,
-  SUM(all_revenue) AS Receita_total,
-  SUM(all_orders) as Total_pedidos,
-  recency,
-  status,
-  average_ticket
-FROM
-  `case-417720.Churn.Case`
-group by 1,2,3,6,7,8
-)
-
--- Diferença entre as datas de assinatura e cancelamento
-Select 
-  t1.*,
-  date_diff(Data_cancelamento, Data_assinatura, day) AS Lifetime_cliente
-From Datas t1
-WHERE
-  t1.Data_cancelamento IS NOT NULL
-```
